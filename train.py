@@ -6,13 +6,15 @@ import tensorflow as tf
 def train(train_dir, validation_dir=None, batch_size=32, initial_epachs=1, finetune_epochs=1, image_size=(160,160)):
     train_dataset = tf.keras.utils.image_dataset_from_directory(train_dir,
                                                             shuffle=True,
+                                                            label_mode="categorical",
                                                             batch_size=batch_size,
                                                             image_size=image_size)
-    print(train_dataset)
+    class_names = train_dataset.class_names
 
     if validation_dir:
       validation_dataset = tf.keras.utils.image_dataset_from_directory(validation_dir,
                                                                   shuffle=True,
+                                                                  label_mode="categorical",
                                                                   batch_size=batch_size,
                                                                   image_size=image_size)
       batches = tf.data.experimental.cardinality(validation_dataset)
@@ -66,7 +68,7 @@ def train(train_dir, validation_dir=None, batch_size=32, initial_epachs=1, finet
     global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
     feature_batch_average = global_average_layer(feature_batch)
     # print(feature_batch_average.shape)
-    prediction_layer = tf.keras.layers.Dense(1)
+    prediction_layer = tf.keras.layers.Dense(len(class_names))
     prediction_batch = prediction_layer(feature_batch_average)
     # print(prediction_batch.shape)
     inputs = tf.keras.Input(shape=image_shape)
@@ -79,9 +81,9 @@ def train(train_dir, validation_dir=None, batch_size=32, initial_epachs=1, finet
     model = tf.keras.Model(inputs, outputs)
     base_learning_rate = 0.0001
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=base_learning_rate),
-              loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+              loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
-    # model.summary()
+    model.summary()
     # len(model.trainable_variables)
 
     # if validation_dataset:
@@ -92,6 +94,7 @@ def train(train_dir, validation_dir=None, batch_size=32, initial_epachs=1, finet
     history = model.fit(train_dataset,
                     epochs=initial_epachs,
                     validation_data=validation_dataset)
+
     # acc = history.history['accuracy']
     # loss = history.history['loss']
     # if validation_dataset:
@@ -104,10 +107,10 @@ def train(train_dir, validation_dir=None, batch_size=32, initial_epachs=1, finet
     fine_tune_at = 100
     for layer in base_model.layers[:fine_tune_at]:
       layer.trainable =  False
-    model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+    model.compile(loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
               optimizer = tf.keras.optimizers.RMSprop(learning_rate=base_learning_rate/10),
               metrics=['accuracy'])
-    # model.summary()
+    model.summary()
     # len(model.trainable_variables)
 
     total_epochs =  initial_epachs + finetune_epochs
