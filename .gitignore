@@ -1,3 +1,5 @@
+.vscode
 venv
 datasets
+models
 simple_images
