@@ -13,9 +13,7 @@ import zipfile
 @contextlib.contextmanager
 def _tempdir():
     dirpath = tempfile.mkdtemp()
-    print(f"create temp: {dirpath}")
     yield dirpath
-    print(f"delete temp: {dirpath}")
     shutil.rmtree(dirpath)
 
 
@@ -148,3 +146,10 @@ class ImageClassifier:
             x = tf.expand_dims(x, 0)
         result = tf.math.argmax(tf.nn.softmax(self.model(x)), axis=-1)
         print(self.class_names[int(result)])
+
+    def predict_img(self, image):
+        image = image.resize(self.image_size)
+        x = tf.keras.preprocessing.image.img_to_array(image)
+        x = tf.expand_dims(x, 0)
+        result = tf.math.argmax(tf.nn.softmax(self.model(x)), axis=-1)
+        return self.class_names[int(result)]
