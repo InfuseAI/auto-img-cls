@@ -3,3 +3,5 @@ venv
 datasets
 models
 simple_images
+
+__pycache__
