@@ -49,6 +49,10 @@ class ImageClassifier:
                 buffer_size=AUTOTUNE)
 
         # Step2: Model Architecture
+
+        # Skip the data_augmentation because
+        # https://stackoverflow.com/questions/69955838/saving-model-on-tensorflow-2-7-0-with-data-augmentation-layer
+        #
         # data_augmentation = tf.keras.Sequential([
         #     tf.keras.layers.RandomFlip('horizontal'),
         #     tf.keras.layers.RandomRotation(0.2),
@@ -64,7 +68,6 @@ class ImageClassifier:
             layer.trainable = False
 
         global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
-        prediction_layer = tf.keras.layers.Dense(len(class_names))
         inputs = tf.keras.Input(shape=image_shape)
         x = inputs
         # x = data_augmentation(x)
@@ -72,12 +75,13 @@ class ImageClassifier:
         x = base_model(x, training=False)
         x = global_average_layer(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-        outputs = prediction_layer(x)
+        x = tf.keras.layers.Dense(len(class_names))(x)
+        outputs = tf.nn.softmax(x)
         model = tf.keras.Model(inputs, outputs)
         base_learning_rate = 0.0001
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=base_learning_rate),
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True),
+            from_logits=False),
             metrics=['accuracy'])
         model.summary()
 
@@ -97,7 +101,6 @@ class ImageClassifier:
 
             # Apply softmax and argmax to find the most possible class
             predictions = model.predict_on_batch(image_batch)
-            predictions = tf.nn.softmax(predictions)
             predictions = tf.math.argmax(predictions, axis=-1)
             print('Predictions:\n', predictions.numpy())
             print('Labels:\n', label_batch)
@@ -144,12 +147,18 @@ class ImageClassifier:
             image = image.resize(self.image_size)
             x = tf.keras.preprocessing.image.img_to_array(image)
             x = tf.expand_dims(x, 0)
-        result = tf.math.argmax(tf.nn.softmax(self.model(x)), axis=-1)
-        print(self.class_names[int(result)])
+        result = self.model(x)
+        result = tf.squeeze(result)
+        cls_idx = int(tf.math.argmax(result, axis=-1))
+        cls = self.class_names[cls_idx]
+        return (cls, result.numpy())
 
     def predict_img(self, image):
         image = image.resize(self.image_size)
         x = tf.keras.preprocessing.image.img_to_array(image)
         x = tf.expand_dims(x, 0)
-        result = tf.math.argmax(tf.nn.softmax(self.model(x)), axis=-1)
-        return self.class_names[int(result)]
+        result = self.model(x)
+        result = tf.squeeze(result)
+        cls_idx = int(tf.math.argmax(result, axis=-1))
+        cls = self.class_names[cls_idx]
+        return (cls, result.numpy())
