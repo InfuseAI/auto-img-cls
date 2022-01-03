@@ -3,6 +3,5 @@ venv
 datasets
 models
 simple_images
-*.zip
 
 __pycache__

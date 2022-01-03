@@ -1,0 +1,75 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/proxy-body-size: 0m
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+  name: img-cls
+  namespace: hub
+spec:
+  rules:
+  - host: hub.celu2.aws.primehub.io
+    http:
+      paths:
+      - backend:
+          serviceName: img-cls
+          servicePort: http
+        path: /img-cls
+  tls:
+  - hosts:
+    - hub.celu2.aws.primehub.io
+    secretName: hub-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: img-cls
+  name: img-cls
+  namespace: hub
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8501
+  selector:
+    app.kubernetes.io/name: img-cls
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: img-cls
+  name: img-cls
+  namespace: hub
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: img-cls
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: img-cls
+    spec:
+      containers:
+      - name: main
+        image: popcornylu/cats-and-dogs
+        env:
+        - name: STREAMLIT_SERVER_BASE_URL_PATH
+          value: /img-cls
+        ports:
+        - containerPort: 8501
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 512m
+            memory: 1Gi
+          requests:
+            cpu: 512m
+            memory: 1Gi
