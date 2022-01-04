@@ -8,7 +8,7 @@ from img_cls import ImageClassifier
 @st.cache(allow_output_mutation=True)
 def load_classifier():
     classifier = ImageClassifier()
-    classifier.load('cats_and_dogs.zip')
+    classifier.load('model.zip')
     return classifier
 
 
@@ -23,7 +23,7 @@ def main():
         image = PIL.Image.open(file)
         cls, prob = classifier.predict_img(image)
         '''
-        ## Predition
+        ## Prediction
         '''
         cls
 

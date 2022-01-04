@@ -9,6 +9,6 @@ RUN pip install streamlit
 
 ADD img_cls.py /app
 ADD streamlit_app.py /app
-ADD cats_and_dogs.zip /app
+ADD model.zip /app
 
 CMD [ "streamlit", "run", "streamlit_app.py"]
