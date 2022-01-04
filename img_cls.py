@@ -144,7 +144,7 @@ class ImageClassifier:
 
     def predict(self, img_path):
         with Image.open(img_path) as image:
-            image = image.resize(self.image_size)
+            image = image.resize(self.image_size).convert("RGB")
             x = tf.keras.preprocessing.image.img_to_array(image)
             x = tf.expand_dims(x, 0)
         result = self.model(x)
@@ -154,7 +154,7 @@ class ImageClassifier:
         return (cls, result.numpy())
 
     def predict_img(self, image):
-        image = image.resize(self.image_size)
+        image = image.resize(self.image_size).convert("RGB")
         x = tf.keras.preprocessing.image.img_to_array(image)
         x = tf.expand_dims(x, 0)
         result = self.model(x)
