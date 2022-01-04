@@ -23,30 +23,29 @@ class ImageClassifier:
         self.image_size = None
         self.class_names = None
 
-    def train(self, train_dir, validation_dir=None, batch_size=32, epochs=1, image_size=(160, 160)):
+    def train(self, dataset_dir, batch_size=32, epochs=1, image_size=(160, 160), learning_rate=0.0001):
         # Step1: Data prep
-        train_dataset = tf.keras.utils.image_dataset_from_directory(train_dir,
-                                                                    shuffle=True,
+        train_dataset = tf.keras.utils.image_dataset_from_directory(dataset_dir,
+                                                                    seed=1337,
+                                                                    validation_split=0.2,
                                                                     batch_size=batch_size,
+                                                                    subset='training',
                                                                     image_size=image_size)
-        validation_dataset = None
-        if validation_dir:
-            validation_dataset = tf.keras.utils.image_dataset_from_directory(validation_dir,
-                                                                             shuffle=True,
-                                                                             batch_size=batch_size,
-                                                                             image_size=image_size)
+        validation_dataset = tf.keras.utils.image_dataset_from_directory(dataset_dir,
+                                                                         seed=1337,
+                                                                         validation_split=0.2,
+                                                                         batch_size=batch_size,
+                                                                         subset='validation',
+                                                                         image_size=image_size)
         class_names = train_dataset.class_names
 
         print('Number of trian batches: %d' %
               tf.data.experimental.cardinality(train_dataset))
-        if validation_dataset:
-            print('Number of validation batches: %d' %
-                  tf.data.experimental.cardinality(validation_dataset))
-        AUTOTUNE = tf.data.AUTOTUNE
-        train_dataset = train_dataset.prefetch(buffer_size=AUTOTUNE)
-        if validation_dataset:
-            validation_dataset = validation_dataset.prefetch(
-                buffer_size=AUTOTUNE)
+        print('Number of validation batches: %d' %
+              tf.data.experimental.cardinality(validation_dataset))
+        train_dataset = train_dataset.prefetch(buffer_size=tf.data.AUTOTUNE)
+        validation_dataset = validation_dataset.prefetch(
+            buffer_size=tf.data.AUTOTUNE)
 
         # Step2: Model Architecture
 
@@ -78,8 +77,7 @@ class ImageClassifier:
         x = tf.keras.layers.Dense(len(class_names))(x)
         outputs = tf.nn.softmax(x)
         model = tf.keras.Model(inputs, outputs)
-        base_learning_rate = 0.0001
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=base_learning_rate),
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(
             from_logits=False),
             metrics=['accuracy'])
